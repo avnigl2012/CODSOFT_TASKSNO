@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Rolodex</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #12151A;
+    --surface: #1B1F26;
+    --surface-2: #232833;
+    --border: #2C323D;
+    --text: #E9E9EA;
+    --text-dim: #8D93A0;
+    --accent: #5FD9C9;
+    --danger: #E8664A;
+    --radius: 10px;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100%;
+    background:
+      radial-gradient(circle at 80% 0%, rgba(95,217,201,0.08), transparent 45%),
+      var(--bg);
+    color: var(--text);
+    font-family: 'Inter', system-ui, sans-serif;
+    display: flex;
+    justify-content: center;
+    padding: 48px 20px 64px;
+  }
+  .app { width: 100%; max-width: 620px; }
+  header { margin-bottom: 24px; }
+  .kicker {
+    font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--accent);
+    margin: 0 0 8px;
+  }
+  h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 32px;
+    font-weight: 700;
+    margin: 0 0 6px;
+    letter-spacing: -0.01em;
+  }
+  .sub { color: var(--text-dim); font-size: 14.5px; margin: 0; line-height: 1.5; }
+
+  .toolbar {
+    display: flex;
+    gap: 8px;
+    margin: 26px 0 18px;
+  }
+  .search-wrap { position: relative; flex: 1; }
+  .search-wrap svg {
+    position: absolute; left: 13px; top: 50%; transform: translateY(-50%);
+    width: 15px; height: 15px; color: var(--text-dim);
+  }
+  #search {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 12px 12px 38px;
+    color: var(--text);
+    font-size: 14.5px;
+    font-family: inherit;
+    outline: none;
+  }
+  #search:focus { border-color: var(--accent); }
+  #newContactBtn {
+    background: var(--accent);
+    color: #0D1512;
+    border: none;
+    border-radius: var(--radius);
+    padding: 0 18px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  #newContactBtn:hover { opacity: 0.92; }
+
+  .count-line {
+    font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-bottom: 14px;
+  }
+
+  #list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .contact-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    cursor: pointer;
+    transition: border-color 0.15s ease;
+  }
+  .contact-card:hover { border-color: var(--accent); }
+  .avatar {
+    width: 38px; height: 38px; border-radius: 50%;
+    background: var(--surface-2);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    color: var(--accent);
+    flex: 0 0 38px;
+    font-size: 15px;
+  }
+  .contact-info { flex: 1; min-width: 0; }
+  .contact-name { font-size: 15px; font-weight: 600; }
+  .contact-phone { font-size: 13px; color: var(--text-dim); font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; margin-top: 2px; }
+  .chevron { color: var(--text-dim); font-size: 18px; }
+
+  .empty {
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 14px;
+    padding: 56px 0;
+    border: 1px dashed var(--border);
+    border-radius: var(--radius);
+  }
+
+  /* Modal */
+  .overlay {
+    position: fixed; inset: 0;
+    background: rgba(8,10,13,0.65);
+    display: none;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 60px 20px;
+    overflow-y: auto;
+    z-index: 10;
+  }
+  .overlay.show { display: flex; }
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    width: 100%;
+    max-width: 420px;
+    padding: 24px;
+  }
+  .modal h2 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 20px;
+    margin: 0 0 18px;
+  }
+  .field { margin-bottom: 14px; }
+  .field label {
+    display: block;
+    font-size: 12.5px;
+    color: var(--text-dim);
+    margin-bottom: 6px;
+    font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace;
+  }
+  .field input, .field textarea {
+    width: 100%;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    color: var(--text);
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+    resize: vertical;
+  }
+  .field input:focus, .field textarea:focus { border-color: var(--accent); }
+
+  .modal-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 20px;
+  }
+  .modal-actions button {
+    flex: 1;
+    padding: 11px 0;
+    border-radius: 8px;
+    border: none;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .btn-save { background: var(--accent); color: #0D1512; }
+  .btn-cancel { background: var(--surface-2); color: var(--text-dim); border: 1px solid var(--border) !important; }
+  .btn-delete { background: transparent; color: var(--danger); border: 1px solid var(--danger) !important; flex: 0 0 auto; padding: 11px 16px; }
+
+  /* Detail view */
+  .detail-row { display: flex; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
+  .detail-row:last-child { border-bottom: none; }
+  .detail-row .k { color: var(--text-dim); width: 70px; flex: 0 0 70px; font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; font-size: 12px; padding-top: 2px; }
+  .detail-row .v { flex: 1; word-break: break-word; }
+</style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <p class="kicker">05 / contact book</p>
+      <h1>Rolodex</h1>
+      <p class="sub">Store names, numbers, emails, and addresses — saved in this browser.</p>
+    </header>
+
+    <div class="toolbar">
+      <div class="search-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input id="search" type="text" placeholder="Search by name or phone" autocomplete="off">
+      </div>
+      <button id="newContactBtn">+ New</button>
+    </div>
+
+    <div class="count-line" id="countLine">0 contacts</div>
+    <div id="list"></div>
+    <div id="emptyState" class="empty" style="display:none;">No contacts yet — add your first one.</div>
+  </div>
+
+  <div class="overlay" id="formOverlay">
+    <div class="modal">
+      <h2 id="formTitle">New contact</h2>
+      <div class="field"><label for="fName">Name</label><input id="fName" type="text" placeholder="Jane Doe"></div>
+      <div class="field"><label for="fPhone">Phone</label><input id="fPhone" type="text" placeholder="+1 555 000 0000"></div>
+      <div class="field"><label for="fEmail">Email</label><input id="fEmail" type="email" placeholder="jane@example.com"></div>
+      <div class="field"><label for="fAddress">Address</label><textarea id="fAddress" rows="2" placeholder="123 Main St"></textarea></div>
+      <div class="modal-actions">
+        <button class="btn-cancel" id="cancelBtn">Cancel</button>
+        <button class="btn-save" id="saveBtn">Save contact</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay" id="detailOverlay">
+    <div class="modal">
+      <h2 id="detailName">Name</h2>
+      <div class="detail-row"><span class="k">Phone</span><span class="v" id="detailPhone">—</span></div>
+      <div class="detail-row"><span class="k">Email</span><span class="v" id="detailEmail">—</span></div>
+      <div class="detail-row"><span class="k">Address</span><span class="v" id="detailAddress">—</span></div>
+      <div class="modal-actions">
+        <button class="btn-delete" id="deleteBtn">Delete</button>
+        <button class="btn-cancel" id="closeDetailBtn">Close</button>
+        <button class="btn-save" id="editBtn">Edit</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+  const STORAGE_KEY = 'rolodex.contacts.v1';
+  let contacts = [];
+  let query = '';
+  let activeId = null;
+
+  function load() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      contacts = raw ? JSON.parse(raw) : [];
+    } catch (e) { contacts = []; }
+  }
+  function save() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(contacts)); } catch (e) {}
+  }
+  function initials(name) {
+    return name.trim().split(/\s+/).slice(0, 2).map(w => w[0]?.toUpperCase() || '').join('');
+  }
+
+  function render() {
+    const list = document.getElementById('list');
+    const empty = document.getElementById('emptyState');
+    list.innerHTML = '';
+
+    const filtered = contacts.filter(c =>
+      c.name.toLowerCase().includes(query) || c.phone.toLowerCase().includes(query)
+    ).sort((a, b) => a.name.localeCompare(b.name));
+
+    document.getElementById('countLine').textContent =
+      contacts.length === 1 ? '1 contact' : `${contacts.length} contacts`;
+
+    if (filtered.length === 0) {
+      empty.style.display = 'block';
+      empty.textContent = contacts.length === 0
+        ? 'No contacts yet — add your first one.'
+        : 'No contacts match your search.';
+    } else {
+      empty.style.display = 'none';
+      filtered.forEach(c => {
+        const card = document.createElement('div');
+        card.className = 'contact-card';
+        card.dataset.id = c.id;
+        card.innerHTML = `
+          <div class="avatar"></div>
+          <div class="contact-info">
+            <div class="contact-name"></div>
+            <div class="contact-phone"></div>
+          </div>
+          <div class="chevron">›</div>
+        `;
+        card.querySelector('.avatar').textContent = initials(c.name) || '?';
+        card.querySelector('.contact-name').textContent = c.name;
+        card.querySelector('.contact-phone').textContent = c.phone || 'No phone number';
+        list.appendChild(card);
+      });
+    }
+  }
+
+  // Form modal (add / edit)
+  const formOverlay = document.getElementById('formOverlay');
+  const detailOverlay = document.getElementById('detailOverlay');
+  let editingId = null;
+
+  function openForm(contact) {
+    editingId = contact ? contact.id : null;
+    document.getElementById('formTitle').textContent = contact ? 'Edit contact' : 'New contact';
+    document.getElementById('fName').value = contact?.name || '';
+    document.getElementById('fPhone').value = contact?.phone || '';
+    document.getElementById('fEmail').value = contact?.email || '';
+    document.getElementById('fAddress').value = contact?.address || '';
+    detailOverlay.classList.remove('show');
+    formOverlay.classList.add('show');
+    document.getElementById('fName').focus();
+  }
+  function closeForm() { formOverlay.classList.remove('show'); }
+
+  document.getElementById('newContactBtn').addEventListener('click', () => openForm(null));
+  document.getElementById('cancelBtn').addEventListener('click', closeForm);
+
+  document.getElementById('saveBtn').addEventListener('click', () => {
+    const name = document.getElementById('fName').value.trim();
+    if (!name) { document.getElementById('fName').focus(); return; }
+    const data = {
+      name,
+      phone: document.getElementById('fPhone').value.trim(),
+      email: document.getElementById('fEmail').value.trim(),
+      address: document.getElementById('fAddress').value.trim(),
+    };
+    if (editingId) {
+      const c = contacts.find(c => c.id === editingId);
+      Object.assign(c, data);
+    } else {
+      contacts.push({ id: Date.now() + Math.random(), ...data });
+    }
+    save();
+    render();
+    closeForm();
+  });
+
+  // Detail modal
+  function openDetail(id) {
+    const c = contacts.find(c => c.id === id);
+    if (!c) return;
+    activeId = id;
+    document.getElementById('detailName').textContent = c.name;
+    document.getElementById('detailPhone').textContent = c.phone || '—';
+    document.getElementById('detailEmail').textContent = c.email || '—';
+    document.getElementById('detailAddress').textContent = c.address || '—';
+    detailOverlay.classList.add('show');
+  }
+  document.getElementById('closeDetailBtn').addEventListener('click', () => detailOverlay.classList.remove('show'));
+  document.getElementById('editBtn').addEventListener('click', () => {
+    const c = contacts.find(c => c.id === activeId);
+    openForm(c);
+  });
+  document.getElementById('deleteBtn').addEventListener('click', () => {
+    contacts = contacts.filter(c => c.id !== activeId);
+    save();
+    render();
+    detailOverlay.classList.remove('show');
+  });
+
+  document.getElementById('list').addEventListener('click', (e) => {
+    const card = e.target.closest('.contact-card');
+    if (card) openDetail(Number(card.dataset.id));
+  });
+
+  document.getElementById('search').addEventListener('input', (e) => {
+    query = e.target.value.trim().toLowerCase();
+    render();
+  });
+
+  [formOverlay, detailOverlay].forEach(ov => {
+    ov.addEventListener('click', (e) => { if (e.target === ov) ov.classList.remove('show'); });
+  });
+
+  load();
+  render();
+</script>
+</body>
+</html>
